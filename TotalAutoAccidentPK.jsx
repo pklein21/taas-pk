@@ -12,7 +12,7 @@ import {
  * ------------------------------------------------------------------ */
 
 /* >>> SET THIS to your deployed Worker URL (see worker.js) <<< */
-const WORKER_BASE = "https://YOUR-WORKER.workers.dev";
+const WORKER_BASE = "https://taa-pk-vdb.peter-9fe.workers.dev";
 
 const C = {
   ink: "#0F2A43", bg: "#F6F4EF", card: "#FFFFFF",
