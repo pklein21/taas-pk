@@ -1,18 +1,49 @@
-import React, { useState, useMemo } from "react";
-import {
-  Shield, Lock, Check, ChevronLeft, ChevronRight, Star, Loader2,
-  Code2, RefreshCw, Car, ScanLine, BadgeCheck, AlertCircle, Gauge, FileText,
-} from "lucide-react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Free Accident Case Review — TotalAutoAccident PK</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.6/babel.min.js"></script>
+<style> body { margin:0; } </style>
+</head>
+<body>
+<div id="root"></div>
 
-/* ------------------------------------------------------------------ *
- *  TotalAutoAccident PK — living funnel mockup                        *
- *  - Funnel + contact capture NOTHING (mock only).                    *
- *  - Real API work happens on the post-submit "boost" page:           *
- *    plate/VIN -> VehicleDatabases (via your Cloudflare Worker).      *
- * ------------------------------------------------------------------ */
+<script type="text/babel">
+const { useState, useMemo } = React;
 
-/* >>> SET THIS to your deployed Worker URL (see worker.js) <<< */
-const WORKER_BASE = "https://taa-pk-vdb.peter-9fe.workers.dev";
+/* >>> Your deployed Worker URL <<< */
+const WORKER_BASE = "https://taas-pk.peter-9fe.workers.dev";
+
+/* ---------- inline icons (lucide-style) ---------- */
+function mkIcon(children) {
+  return function Icon({ size = 18, color = "currentColor", fill = "none", strokeWidth = 2, className = "", style = {} }) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24"
+        fill={fill} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"
+        className={className} style={style}>{children}</svg>
+    );
+  };
+}
+const Shield = mkIcon(<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />);
+const Lock = mkIcon(<><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></>);
+const Check = mkIcon(<path d="M20 6 9 17l-5-5" />);
+const ChevronLeft = mkIcon(<path d="m15 18-6-6 6-6" />);
+const ChevronRight = mkIcon(<path d="m9 18 6-6-6-6" />);
+const Star = mkIcon(<path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" />);
+const Loader2 = mkIcon(<path d="M21 12a9 9 0 1 1-6.219-8.56" />);
+const Code2 = mkIcon(<><path d="m18 16 4-4-4-4" /><path d="m6 8-4 4 4 4" /><path d="m14.5 4-5 16" /></>);
+const RefreshCw = mkIcon(<><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" /></>);
+const Car = mkIcon(<><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.5 2.8A3 3 0 0 0 2 12v4c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><path d="M9 17h6" /><circle cx="17" cy="17" r="2" /></>);
+const ScanLine = mkIcon(<><path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" /><path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" /><path d="M7 12h10" /></>);
+const BadgeCheck = mkIcon(<><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.78 4.78 4 4 0 0 1-6.74 0 4 4 0 0 1-4.78-4.78 4 4 0 0 1 0-6.74z" /><path d="m9 12 2 2 4-4" /></>);
+const AlertCircle = mkIcon(<><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>);
+const Gauge = mkIcon(<><path d="m12 14 4-4" /><path d="M3.34 19a10 10 0 1 1 17.32 0" /></>);
+const FileText = mkIcon(<><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z" /><path d="M14 2v6h6" /><path d="M16 13H8" /><path d="M16 17H8" /><path d="M10 9H8" /></>);
 
 const C = {
   ink: "#0F2A43", bg: "#F6F4EF", card: "#FFFFFF",
@@ -63,11 +94,10 @@ const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","
 
 const CONTACT_IDX = STEPS.length;
 const MAX_SCORE = STEPS.reduce((s, st) => s + Math.max(...st.options.map(o => o.score)), 0);
-const labelFor = (id, v) => STEPS.find(s => s.id === id)?.options.find(o => o.value === v)?.label ?? v;
 
-export default function App() {
-  const [view, setView] = useState("funnel");       // funnel | boost | thanks
-  const [idx, setIdx] = useState(0);                  // 0..CONTACT_IDX
+function App() {
+  const [view, setView] = useState("funnel");
+  const [idx, setIdx] = useState(0);
   const [answers, setAnswers] = useState({});
   const [contact, setContact] = useState({ first: "", last: "", phone: "", email: "", zip: "" });
 
@@ -102,7 +132,7 @@ export default function App() {
     contact.zip.trim().length >= 4;
 
   async function getJSON(path) {
-    const r = await fetch(`${WORKER_BASE}${path}`);
+    const r = await fetch(WORKER_BASE + path);
     let body; try { body = await r.json(); } catch { body = await r.text(); }
     return { status: r.status, body };
   }
@@ -114,16 +144,16 @@ export default function App() {
       let theVin = vin.trim().toUpperCase();
       if (mode === "plate") {
         out.input = { plate: plate.trim().toUpperCase(), state: plateState };
-        const res = await getJSON(`/plate/${plateState}/${encodeURIComponent(plate.trim())}`);
+        const res = await getJSON("/plate/" + plateState + "/" + encodeURIComponent(plate.trim()));
         out.steps.plateDecode = res;
-        theVin = res.body?.data?.intro?.vin || "";
+        theVin = (res.body && res.body.data && res.body.data.intro && res.body.data.intro.vin) || "";
       } else {
         out.input = { vin: theVin };
       }
       out.resolvedVin = theVin;
       if (!theVin) throw new Error("No VIN could be resolved from that input.");
 
-      const eps = [["vinDecode", `/vin/${theVin}`], ["salesHistory", `/saleshistory/${theVin}`], ["marketValue", `/marketvalue/${theVin}`]];
+      const eps = [["vinDecode", "/vin/" + theVin], ["salesHistory", "/saleshistory/" + theVin], ["marketValue", "/marketvalue/" + theVin]];
       await Promise.all(eps.map(async ([k, p]) => {
         try { out.steps[k] = await getJSON(p); }
         catch (e) { out.steps[k] = { status: "error", error: String(e) }; }
@@ -143,32 +173,30 @@ export default function App() {
     setPlate(""); setVin(""); setVehicle(null);
   }
 
-  /* ---- extract a few highlight fields from the responses ---- */
   const hi = useMemo(() => {
     if (!vehicle) return null;
-    const basic = vehicle.steps?.vinDecode?.body?.data?.basic || {};
-    const sh = vehicle.steps?.salesHistory?.body?.data?.sales_history?.[0]?.data || {};
+    const basic = (vehicle.steps.vinDecode && vehicle.steps.vinDecode.body && vehicle.steps.vinDecode.body.data && vehicle.steps.vinDecode.body.data.basic) || {};
+    const shArr = vehicle.steps.salesHistory && vehicle.steps.salesHistory.body && vehicle.steps.salesHistory.body.data && vehicle.steps.salesHistory.body.data.sales_history;
+    const sh = (shArr && shArr[0] && shArr[0].data) || {};
     return {
       vin: vehicle.resolvedVin,
       ymm: [basic.year, basic.make, basic.model, basic.trim].filter(Boolean).join(" "),
-      odometer: sh.odometer_mi ? `${Number(sh.odometer_mi).toLocaleString()} mi` : "",
+      odometer: sh.odometer_mi ? Number(sh.odometer_mi).toLocaleString() + " mi" : "",
       damage: [sh.primary_damage, sh.secondary_damage].filter(Boolean).join(", "),
-      repairCost: sh.listing_price?.repair_cost || "",
-      retail: sh.listing_price?.retail_value || "",
+      repairCost: (sh.listing_price && sh.listing_price.repair_cost) || "",
+      retail: (sh.listing_price && sh.listing_price.retail_value) || "",
       accident: sh.accident_records || "",
       title: sh.title_record || "",
       images: Array.isArray(sh.images) ? sh.images.slice(0, 4) : [],
     };
   }, [vehicle]);
 
-  const money = n => typeof n === "number" ? "$" + n.toLocaleString("en-US") : n;
-  const workerSet = WORKER_BASE && !WORKER_BASE.includes("YOUR-WORKER");
+  const workerSet = WORKER_BASE && WORKER_BASE.indexOf("YOUR-WORKER") === -1;
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center px-4 py-6 sm:py-10"
       style={{ background: C.bg, color: C.ink, fontFamily: "ui-sans-serif, system-ui, sans-serif" }}>
 
-      {/* Header */}
       <header className="w-full max-w-3xl flex items-center justify-between mb-5">
         <div className="flex items-center gap-2">
           <div className="flex items-center justify-center rounded-lg" style={{ width: 34, height: 34, background: C.ink }}>
@@ -182,7 +210,7 @@ export default function App() {
           </div>
         </div>
         <div className="hidden sm:flex items-center gap-1.5 rounded-full px-3 py-1"
-          style={{ fontSize: 11.5, color: C.slate, background: "#fff", border: `1px solid ${C.line}` }}>
+          style={{ fontSize: 11.5, color: C.slate, background: "#fff", border: "1px solid " + C.line }}>
           <Lock size={12} /> Secure · No obligation
         </div>
       </header>
@@ -190,26 +218,24 @@ export default function App() {
       {!workerSet && (
         <div className="w-full max-w-3xl mb-3 rounded-lg px-3 py-2 flex items-center gap-2"
           style={{ fontSize: 12, color: C.gold, background: C.goldSoft }}>
-          <AlertCircle size={14} /> Set <code>WORKER_BASE</code> at the top of this file to your deployed Worker URL before the plate/VIN lookup will work.
+          <AlertCircle size={14} /> Set WORKER_BASE near the top of this file to your deployed Worker URL.
         </div>
       )}
 
-      {/* Progress */}
       <div className="w-full max-w-3xl mb-4">
         <div className="flex items-center justify-between mb-1.5" style={{ fontSize: 11.5, color: C.slate }}>
-          <span>{view === "thanks" ? "Complete" : view === "boost" ? "One last step" : `Step ${Math.min(idx + 1, STEPS.length + 1)} of ${STEPS.length + 1}`}</span>
+          <span>{view === "thanks" ? "Complete" : view === "boost" ? "One last step" : "Step " + Math.min(idx + 1, STEPS.length + 1) + " of " + (STEPS.length + 1)}</span>
           <span>{progress}%</span>
         </div>
         <div className="w-full rounded-full overflow-hidden" style={{ height: 7, background: C.softLine }}>
-          <div className="h-full rounded-full transition-all duration-500 ease-out" style={{ width: `${progress}%`, background: C.green }} />
+          <div className="h-full rounded-full transition-all duration-500 ease-out" style={{ width: progress + "%", background: C.green }} />
         </div>
       </div>
 
       <main className="w-full max-w-3xl grid grid-cols-1 md:grid-cols-[1fr_260px] gap-4">
         <section className="rounded-2xl p-6 sm:p-8"
-          style={{ background: C.card, border: `1px solid ${C.line}`, boxShadow: "0 1px 2px rgba(15,42,67,0.04)" }}>
+          style={{ background: C.card, border: "1px solid " + C.line, boxShadow: "0 1px 2px rgba(15,42,67,0.04)" }}>
 
-          {/* ---------- FUNNEL: questions ---------- */}
           {view === "funnel" && step && (
             <div>
               {idx > 0 && (
@@ -226,12 +252,12 @@ export default function App() {
                   return (
                     <button key={o.value} onClick={() => choose(o.value)}
                       className="w-full text-left rounded-xl px-4 py-3.5 flex items-center justify-between transition-all duration-150"
-                      style={{ border: `1.5px solid ${sel ? C.green : C.line}`, background: sel ? "#EAF5F0" : "#fff", fontSize: 15.5, fontWeight: 500 }}
+                      style={{ border: "1.5px solid " + (sel ? C.green : C.line), background: sel ? "#EAF5F0" : "#fff", fontSize: 15.5, fontWeight: 500 }}
                       onMouseEnter={e => { if (!sel) e.currentTarget.style.borderColor = C.green; }}
                       onMouseLeave={e => { if (!sel) e.currentTarget.style.borderColor = C.line; }}>
                       <span>{o.label}</span>
                       <span className="flex items-center justify-center rounded-full"
-                        style={{ width: 22, height: 22, border: `1.5px solid ${sel ? C.green : C.line}`, background: sel ? C.green : "transparent" }}>
+                        style={{ width: 22, height: 22, border: "1.5px solid " + (sel ? C.green : C.line), background: sel ? C.green : "transparent" }}>
                         {sel ? <Check size={13} color="#fff" strokeWidth={3} /> : <ChevronRight size={13} color={C.slate} />}
                       </span>
                     </button>
@@ -241,7 +267,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ---------- FUNNEL: contact (captures nothing) ---------- */}
           {view === "funnel" && onContact && (
             <div>
               <button onClick={back} className="inline-flex items-center gap-1 mb-5" style={{ fontSize: 13, color: C.slate }}>
@@ -266,7 +291,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ---------- BOOST: plate / VIN value page (REAL API) ---------- */}
           {view === "boost" && (
             <div>
               <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 mb-3"
@@ -288,17 +312,16 @@ export default function App() {
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
-                  {/* Plate card */}
-                  <div className="rounded-xl p-4" style={{ border: `1.5px solid ${C.line}` }}>
+                  <div className="rounded-xl p-4" style={{ border: "1.5px solid " + C.line }}>
                     <div className="flex items-center gap-2 mb-3" style={{ fontSize: 13.5, fontWeight: 700 }}>
                       <ScanLine size={16} color={C.green} /> License plate
                     </div>
-                    <div className="grid grid-cols-[1fr_88px] gap-2">
+                    <div className="grid gap-2" style={{ gridTemplateColumns: "1fr 88px" }}>
                       <input value={plate} onChange={e => setPlate(e.target.value.toUpperCase())} placeholder="ABC1234"
-                        className="rounded-lg px-3 py-2.5 outline-none" style={{ border: `1.5px solid ${C.line}`, fontSize: 15, letterSpacing: 1 }}
+                        className="rounded-lg px-3 py-2.5 outline-none" style={{ border: "1.5px solid " + C.line, fontSize: 15, letterSpacing: 1 }}
                         onFocus={e => e.target.style.borderColor = C.green} onBlur={e => e.target.style.borderColor = C.line} />
                       <select value={plateState} onChange={e => setPlateState(e.target.value)}
-                        className="rounded-lg px-2 py-2.5 outline-none" style={{ border: `1.5px solid ${C.line}`, fontSize: 14, background: "#fff" }}>
+                        className="rounded-lg px-2 py-2.5 outline-none" style={{ border: "1.5px solid " + C.line, fontSize: 14, background: "#fff" }}>
                         {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
                     </div>
@@ -313,13 +336,12 @@ export default function App() {
                     <div className="flex-1" style={{ height: 1, background: C.line }} /> or <div className="flex-1" style={{ height: 1, background: C.line }} />
                   </div>
 
-                  {/* VIN card */}
-                  <div className="rounded-xl p-4" style={{ border: `1.5px solid ${C.line}` }}>
+                  <div className="rounded-xl p-4" style={{ border: "1.5px solid " + C.line }}>
                     <div className="flex items-center gap-2 mb-3" style={{ fontSize: 13.5, fontWeight: 700 }}>
                       <FileText size={16} color={C.green} /> VIN (Vehicle Identification Number)
                     </div>
                     <input value={vin} onChange={e => setVin(e.target.value.toUpperCase())} placeholder="17-character VIN" maxLength={17}
-                      className="w-full rounded-lg px-3 py-2.5 outline-none" style={{ border: `1.5px solid ${C.line}`, fontSize: 15, letterSpacing: 1 }}
+                      className="w-full rounded-lg px-3 py-2.5 outline-none" style={{ border: "1.5px solid " + C.line, fontSize: 15, letterSpacing: 1 }}
                       onFocus={e => e.target.style.borderColor = C.green} onBlur={e => e.target.style.borderColor = C.line} />
                     <button onClick={() => runLookup("vin")} disabled={vin.trim().length < 11 || !workerSet}
                       className="w-full mt-3 rounded-lg py-2.5 flex items-center justify-center gap-2"
@@ -336,7 +358,6 @@ export default function App() {
             </div>
           )}
 
-          {/* ---------- THANKS + full data dump ---------- */}
           {view === "thanks" && (
             <div>
               <div className="flex items-center gap-2 mb-3">
@@ -349,7 +370,7 @@ export default function App() {
               </div>
 
               <h1 className="mb-2" style={{ fontFamily: "ui-serif, Georgia, serif", fontSize: 25, lineHeight: 1.25, fontWeight: 600 }}>
-                Thank you{contact.first ? `, ${contact.first}` : ""}.
+                Thank you{contact.first ? ", " + contact.first : ""}.
               </h1>
 
               {vehicle ? (
@@ -363,9 +384,8 @@ export default function App() {
                 </p>
               )}
 
-              {/* Highlights */}
               {hi && (hi.ymm || hi.vin) && (
-                <div className="rounded-xl p-5 mb-4" style={{ background: "#FBF6EA", border: `1px solid ${C.goldSoft}` }}>
+                <div className="rounded-xl p-5 mb-4" style={{ background: "#FBF6EA", border: "1px solid " + C.goldSoft }}>
                   <div className="uppercase tracking-wide mb-2" style={{ fontSize: 11, color: C.gold, fontWeight: 700 }}>Vehicle record found</div>
                   <div style={{ fontSize: 19, fontWeight: 700, fontFamily: "ui-serif, Georgia, serif" }}>{hi.ymm || "Vehicle"}</div>
                   {hi.vin && <div style={{ fontSize: 12.5, color: C.slate, letterSpacing: 1 }}>VIN {hi.vin}</div>}
@@ -377,29 +397,26 @@ export default function App() {
                     {hi.accident && <Stat icon={FileText} label="Accident records" value={hi.accident} />}
                     {hi.title && <Stat icon={FileText} label="Title record" value={hi.title} />}
                   </div>
-                  {hi.images?.length > 0 && (
+                  {hi.images && hi.images.length > 0 && (
                     <div className="flex gap-2 mt-3 overflow-x-auto">
-                      {hi.images.map((src, i) => (
-                        <img key={i} src={src} alt="" style={{ height: 64, borderRadius: 8, border: `1px solid ${C.line}` }} />
-                      ))}
+                      {hi.images.map((src, i) => (<img key={i} src={src} alt="" style={{ height: 64, borderRadius: 8, border: "1px solid " + C.line }} />))}
                     </div>
                   )}
                 </div>
               )}
 
-              {vehicle?.error && (
+              {vehicle && vehicle.error && (
                 <div className="rounded-lg px-3 py-2 mb-4 flex items-center gap-2" style={{ fontSize: 12.5, color: C.gold, background: C.goldSoft }}>
                   <AlertCircle size={14} /> {vehicle.error}
                 </div>
               )}
 
-              {/* Per-endpoint status */}
               {vehicle && (
                 <div className="flex flex-col gap-1.5 mb-4">
                   {Object.entries(vehicle.steps).map(([k, v]) => {
-                    const ok = v.status === 200 || v.body?.status === "success";
+                    const ok = v.status === 200 || (v.body && v.body.status === "success");
                     return (
-                      <div key={k} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ fontSize: 12.5, border: `1px solid ${C.line}` }}>
+                      <div key={k} className="flex items-center justify-between rounded-lg px-3 py-2" style={{ fontSize: 12.5, border: "1px solid " + C.line }}>
                         <span style={{ fontWeight: 600 }}>{k}</span>
                         <span className="flex items-center gap-1" style={{ color: ok ? C.greenDark : "#B45454" }}>
                           {ok ? <Check size={13} /> : <AlertCircle size={13} />} {String(v.status)}
@@ -441,7 +458,6 @@ export default function App() {
           )}
         </section>
 
-        {/* Sidebar */}
         <aside className="flex flex-col gap-4">
           {view === "funnel" && (
             <div className="rounded-2xl p-5" style={{ background: C.tipBg, border: "1px solid #D9E5F0" }}>
@@ -449,19 +465,19 @@ export default function App() {
                 <Star size={13} fill={C.tip} color={C.tip} /> Advocate Tip
               </div>
               <p style={{ fontSize: 13, color: C.ink, lineHeight: 1.5 }}>
-                {onContact ? "You're almost done. Your details are only used to deliver your review." : step?.tip}
+                {onContact ? "You're almost done. Your details are only used to deliver your review." : step && step.tip}
               </p>
             </div>
           )}
 
           {view !== "thanks" && (
-            <div className="rounded-2xl p-5" style={{ background: C.card, border: `1px solid ${C.line}` }}>
+            <div className="rounded-2xl p-5" style={{ background: C.card, border: "1px solid " + C.line }}>
               <div className="flex items-center justify-between mb-2">
                 <span style={{ fontSize: 12, fontWeight: 600 }}>Case strength</span>
                 <span style={{ fontSize: 12, fontWeight: 700, color: C.green }}>{strength}%</span>
               </div>
               <div className="w-full rounded-full overflow-hidden mb-3" style={{ height: 8, background: C.softLine }}>
-                <div className="h-full rounded-full transition-all duration-500" style={{ width: `${strength}%`, background: `linear-gradient(90deg, ${C.green}, ${C.gold})` }} />
+                <div className="h-full rounded-full transition-all duration-500" style={{ width: strength + "%", background: "linear-gradient(90deg, " + C.green + ", " + C.gold + ")" }} />
               </div>
               <p style={{ fontSize: 11.5, color: C.slate, lineHeight: 1.5 }}>
                 {view === "boost" ? "Adding a vehicle report can lift this further." : "Builds as you answer."}
@@ -470,11 +486,14 @@ export default function App() {
           )}
 
           <div className="flex flex-col gap-2 px-1">
-            {[{ icon: Lock, t: "256-bit encrypted intake" }, { icon: Shield, t: "No obligation, ever" }, { icon: Check, t: "Free advocate review" }].map((b, i) => (
-              <div key={i} className="flex items-center gap-2" style={{ fontSize: 12, color: C.slate }}>
-                <b.icon size={13} color={C.green} /> {b.t}
-              </div>
-            ))}
+            {[{ icon: Lock, t: "256-bit encrypted intake" }, { icon: Shield, t: "No obligation, ever" }, { icon: Check, t: "Free advocate review" }].map((b, i) => {
+              const I = b.icon;
+              return (
+                <div key={i} className="flex items-center gap-2" style={{ fontSize: 12, color: C.slate }}>
+                  <I size={13} color={C.green} /> {b.t}
+                </div>
+              );
+            })}
           </div>
         </aside>
       </main>
@@ -491,7 +510,7 @@ function Field({ label, value, onChange, type = "text" }) {
     <label className="flex flex-col gap-1">
       <span style={{ fontSize: 12, color: C.slate, fontWeight: 500 }}>{label}</span>
       <input type={type} value={value} onChange={e => onChange(e.target.value)}
-        className="rounded-lg px-3 py-2.5 outline-none" style={{ border: `1.5px solid ${C.line}`, fontSize: 14.5, background: "#fff" }}
+        className="rounded-lg px-3 py-2.5 outline-none" style={{ border: "1.5px solid " + C.line, fontSize: 14.5, background: "#fff" }}
         onFocus={e => e.target.style.borderColor = C.green} onBlur={e => e.target.style.borderColor = C.line} />
     </label>
   );
@@ -511,7 +530,7 @@ function Stat({ icon: Icon, label, value }) {
 
 function DevBlock({ title, obj }) {
   return (
-    <div className="rounded-lg overflow-hidden" style={{ border: `1px solid ${C.line}` }}>
+    <div className="rounded-lg overflow-hidden" style={{ border: "1px solid " + C.line }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: C.slate, padding: "6px 10px", background: "#F7F5F0" }}>{title}</div>
       <pre className="overflow-auto" style={{ fontSize: 10.5, lineHeight: 1.45, margin: 0, padding: 10, maxHeight: 320, background: "#FCFBF8", fontFamily: "ui-monospace, monospace" }}>
         {JSON.stringify(obj, null, 2)}
@@ -519,3 +538,8 @@ function DevBlock({ title, obj }) {
     </div>
   );
 }
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
