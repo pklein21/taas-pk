@@ -153,7 +153,7 @@ function App() {
       out.resolvedVin = theVin;
       if (!theVin) throw new Error("No VIN could be resolved from that input.");
 
-      const eps = [["history", "/history/" + theVin], ["vinDecode", "/vin/" + theVin], ["salesHistory", "/saleshistory/" + theVin], ["marketValue", "/marketvalue/" + theVin]];
+      const eps = [["history", "/history/" + theVin], ["vinDecode", "/vin/" + theVin]];
       await Promise.all(eps.map(async ([k, p]) => {
         try { out.steps[k] = await getJSON(p); }
         catch (e) { out.steps[k] = { status: "error", error: String(e) }; }
@@ -176,21 +176,32 @@ function App() {
   const hi = useMemo(() => {
     if (!vehicle) return null;
     const basic = (vehicle.steps.vinDecode && vehicle.steps.vinDecode.body && vehicle.steps.vinDecode.body.data && vehicle.steps.vinDecode.body.data.basic) || {};
-    const shArr = vehicle.steps.salesHistory && vehicle.steps.salesHistory.body && vehicle.steps.salesHistory.body.data && vehicle.steps.salesHistory.body.data.sales_history;
-    const sh = (shArr && shArr[0] && shArr[0].data) || {};
+    const h = (vehicle.steps.history && vehicle.steps.history.body && vehicle.steps.history.body.data) || {};
+    const auc = (Array.isArray(h.auctions) && h.auctions[0]) || {};
+    const mv = auc.auction_market_value || {};
+
+    // retail: prefer auction estimate, else book value (Clean row, Dealer Retail)
+    let retail = mv.estimated_retail_value || "";
+    if (!retail && Array.isArray(h.market_value_data) && h.market_value_data[0]) {
+      const rows = h.market_value_data[0]["market value"] || [];
+      const clean = rows.find(r => /clean/i.test(r.Condition)) || rows[0];
+      if (clean) retail = clean["Dealer Retail"] || clean["Private Party"] || "";
+    }
+
+    const odoRaw = h.basic_specs && h.basic_specs.estimated_current_mileage != null
+      ? String(h.basic_specs.estimated_current_mileage).replace(/[^\d.]/g, "") : "";
+
     return {
       vin: vehicle.resolvedVin,
-      ymm: [basic.year, basic.make, basic.model, basic.trim].filter(Boolean).join(" "),
-      odometer: (function () {
-        var raw = sh.odometer_mi != null ? String(sh.odometer_mi).replace(/[^\d.]/g, "") : "";
-        return raw && isFinite(Number(raw)) ? Number(raw).toLocaleString() + " mi" : "";
-      })(),
-      damage: [sh.primary_damage, sh.secondary_damage].filter(Boolean).join(", "),
-      repairCost: (sh.listing_price && sh.listing_price.repair_cost) || "",
-      retail: (sh.listing_price && sh.listing_price.retail_value) || "",
-      accident: sh.accident_records || "",
-      title: sh.title_record || "",
-      images: Array.isArray(sh.images) ? sh.images.slice(0, 4) : [],
+      ymm: [basic.year, basic.make, basic.model, basic.trim].filter(Boolean).join(" ")
+        || h.vehicle_name || [h.year, h.make, h.model].filter(Boolean).join(" "),
+      odometer: odoRaw && isFinite(Number(odoRaw)) ? Number(odoRaw).toLocaleString() + " mi" : "",
+      damage: [mv.primary_damage, mv.secondary_damage].filter(Boolean).join(", "),
+      repairCost: mv.estimated_repair_cost || "",
+      retail: retail,
+      accident: typeof h.accident_records === "string" ? h.accident_records : "",
+      title: "",
+      images: Array.isArray(auc.images) ? auc.images.slice(0, 4) : [],
     };
   }, [vehicle]);
 
